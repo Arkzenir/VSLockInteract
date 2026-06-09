@@ -1,0 +1,10 @@
+{
+  "Enabled": true,
+  "HoldTime": 0.8,
+  "ApplyToPersonalLocks": false,
+  "BlockCodeAllowList": ["game:door-*"],
+  "BlockCodeDenyList": [],
+  "ShowProgressOverlay": true,
+  "PlayCompletionSound": true,
+  "ShowHoldHint": true
+}

@@ -1,0 +1,13 @@
+<!--
+  localSettings.props — NOT committed to version control.
+  Copy this template to localSettings.props and fill in your actual paths.
+-->
+<Project>
+  <PropertyGroup>
+    <!-- Path to your Vintage Story 1.22.x installation -->
+    <!-- <GameDirectory_1_22>C:\Program Files\Vintagestory</GameDirectory_1_22> -->
+
+    <!-- Path to your Vintage Story 1.21.x installation (if different) -->
+    <!-- <GameDirectory_1_21>C:\Program Files\Vintagestory</GameDirectory_1_21> -->
+  </PropertyGroup>
+</Project>

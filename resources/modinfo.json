@@ -1,0 +1,14 @@
+{
+    "type": "code",
+    "name": "Lock Interact",
+    "modid": "lockinteract",
+    "version": "1.0.0",
+    "description": "Requires players to hold the interact key when opening locked containers or doors, similar to how CarryOn handles picking up blocks.",
+    "authors": [ "YourName" ],
+    "dependencies": {
+        "game": "1.22.0"
+    },
+    "side": "Universal",
+    "requiredOnClient": false,
+    "requiredOnServer": false
+}
