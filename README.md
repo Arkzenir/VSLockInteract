@@ -84,15 +84,3 @@ Place the mod in your server's `Mods/` folder. Clients that don't have it instal
 ## CarryOn compatibility
 
 When CarryOn is installed and the player is carrying a block in their hands, LockInteract yields entirely. CarryOn manages its own interact delay in that state.
-
----
-
-## Building from source
-
-Copy `localSettings.props.template` to `localSettings.props` and set `GameDirectory` to your Vintage Story installation path.
-
-```
-dotnet build LockInteract_1.21.csproj -c Release
-```
-
-The release zip is written to `Releases/`.
