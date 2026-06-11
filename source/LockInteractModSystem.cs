@@ -7,6 +7,12 @@ using Vintagestory.API.Server;
 
 namespace LockInteract
 {
+    /// <summary>
+    /// Client-to-server message sent when a hold interaction completes.
+    /// The server runs OnBlockInteractStart at the given position, which performs
+    /// the actual access check and opens the block. We send the lock origin position
+    /// (resolved from any multiblock) rather than the clicked face position.
+    /// </summary>
     [ProtoContract]
     public class LockInteractUseMessage
     {
@@ -49,6 +55,11 @@ namespace LockInteract
                 .SetMessageHandler<LockInteractUseMessage>(OnUseMessage);
         }
 
+        /// <summary>
+        /// Fires OnBlockInteractStart server-side when a client completes a hold.
+        /// The server performs the actual access check (reinforcement lock, land claim)
+        /// and sends the appropriate response packet (e.g. open inventory) back to the client.
+        /// </summary>
         private static void OnUseMessage(IServerPlayer player, LockInteractUseMessage msg)
         {
             var pos   = new BlockPos(msg.X, msg.Y, msg.Z, player.Entity.Pos.Dimension);
@@ -78,12 +89,9 @@ namespace LockInteract
                 api.Logger.Error($"[LockInteract] Failed to parse ModConfig/lockinteract.json: {ex.Message}. Using defaults.");
             }
 
-            if (cfg != null)
-            {
-                api.Logger.Notification("[LockInteract] Config loaded from ModConfig/lockinteract.json");
-                return cfg;
-            }
+            if (cfg != null) return cfg;
 
+            // No user config yet — write defaults so the file exists for editing
             cfg = new LockInteractConfig();
             try   { api.StoreModConfig(cfg, "lockinteract.json"); }
             catch (Exception ex)

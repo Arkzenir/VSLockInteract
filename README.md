@@ -1,8 +1,6 @@
 # LockInteract
 
-Adds a short hold-to-interact delay when opening locked blocks. Instead of a locked door swinging open the instant you right-click, you must hold the interact button for a brief moment — creating a small amount of intentional friction that makes locks feel more meaningful.
-
-Works on all locked, reinforced blocks. Compatible with CarryOn.
+Adds a short hold-to-interact delay when opening locked blocks. Instead of a locked door swinging open the instant you right-click, you must hold the interact button for a brief moment — creating intentional friction that makes locks feel more meaningful.
 
 ---
 
@@ -11,27 +9,29 @@ Works on all locked, reinforced blocks. Compatible with CarryOn.
 When you right-click a locked block that passes the configured filters:
 
 1. The interact action is suppressed.
-2. A circular progress ring appears at the crosshair and a "Hold to open…" label appears below it.
-3. If you hold the interact button for the configured duration (default 0.8s), the block opens.
-4. If you release early or look away, the action is cancelled.
-
-The delay applies to all players — owners, group members, and strangers alike (configurable).
+2. A circular progress ring appears at the crosshair with a "Hold to open…" label below it.
+3. Hold the interact button for the configured duration (default 0.8s) to open the block.
+4. Release early or look away to cancel.
 
 ---
 
 ## Default behaviour
 
-Out of the box, the mod only delays **locked doors** (`game:door-*`). This keeps the friction focused on the most meaningful entry point — a locked door — without affecting chests, crates, or other containers.
+Out of the box, the mod restricts **locked doors** (`game:door-*`) only. Chests, crates, and other containers are unaffected unless you add them to the allow-list.
 
-Players who own a door personally (sole individual lock, no group) are **not** delayed by default. Group-owned doors, doors owned by other players, and doors you've been granted access to are all delayed.
+Players who own a door personally (sole individual lock, no group) are **not** delayed by default. Group-owned doors and doors belonging to other players are delayed.
 
-Both of these defaults are configurable.
+---
+
+## CarryOn compatibility
+
+When CarryOn is installed and the player is carrying a block in their hands, LockInteract yields entirely and CarryOn handles the interaction on its own.
 
 ---
 
 ## Configuration
 
-The config file is written to `ModConfig/lockinteract.json` on first launch. Edit it there to customise behaviour. The bundled `assets/lockinteract/config/lockinteract.json` shows the defaults for reference.
+Written to `ModConfig/lockinteract.json` on first launch. The bundled `assets/lockinteract/config/lockinteract.json` shows the defaults.
 
 ```json
 {
@@ -48,39 +48,49 @@ The config file is written to `ModConfig/lockinteract.json` on first launch. Edi
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `Enabled` | `true` | Master switch. Set to `false` to disable the mod entirely. |
-| `HoldTime` | `0.8` | Hold duration in seconds before the interaction fires. |
-| `ApplyToPersonalLocks` | `false` | When `false`, blocks you personally own (sole individual lock, no group) open instantly. When `true`, the delay applies even to your own locks. |
-| `BlockCodeAllowList` | `["game:door-*"]` | If non-empty, only locked blocks whose code matches an entry are delayed. Empty means all locked blocks are affected. Supports `*` wildcards. |
-| `BlockCodeDenyList` | `[]` | Locked blocks whose code matches an entry are never delayed, even if they would otherwise qualify. Takes precedence over the allow-list. Supports `*` wildcards. |
-| `ShowProgressOverlay` | `true` | Show the circular progress ring at the crosshair. |
-| `PlayCompletionSound` | `true` | Play a soft sound when the hold completes. |
-| `ShowHoldHint` | `true` | Show the "Hold to open…" label below the crosshair. |
+| `Enabled` | `true` | Master switch. |
+| `HoldTime` | `0.8` | Hold duration in seconds. |
+| `ApplyToPersonalLocks` | `false` | When `false`, blocks you personally own open instantly. When `true`, the delay applies even to your own locks. |
+| `BlockCodeAllowList` | `["game:door-*"]` | Only locked blocks whose code matches an entry are delayed. Empty means all locked blocks. Supports `*` wildcards. |
+| `BlockCodeDenyList` | `[]` | Locked blocks matching an entry are never delayed. Takes precedence over the allow-list. Supports `*` wildcards. |
+| `ShowProgressOverlay` | `true` | Show the circular progress ring. |
+| `PlayCompletionSound` | `true` | Play a sound on completion. |
+| `ShowHoldHint` | `true` | Show the "Hold to open…" label. |
 
-### Block code examples
+### Example: restrict all locked containers and doors
 
 ```json
 "BlockCodeAllowList": [
   "game:door-*",
   "game:trapdoor-*",
-  "game:fence-gate-*"
+  "game:fence-gate-*",
+  "game:chest-*",
+  "game:crate-*"
 ]
 ```
+
+### Example: exclude a specific door type
 
 ```json
-"BlockCodeDenyList": [
-  "game:door-plank-*"
-]
+"BlockCodeDenyList": ["game:door-plank-*"]
 ```
 
 ---
 
-## Server use
+## Server deployment
 
-Place the mod in your server's `Mods/` folder. Clients that don't have it installed will receive it automatically on join (`requiredOnClient: false`). The mod is cosmetic and client-side — the server enforces all actual access control as normal. Players without the mod simply get instant interaction, which is the vanilla behaviour.
+Place the mod in your server's `Mods/` folder. With `requiredOnClient: true` (default), clients without the mod are refused connection. Change to `requiredOnClient: false` in `modinfo.json` for automatic client download on join.
+
+The mod is client-side only for the UI and input handling. All actual access control remains server-enforced.
 
 ---
 
-## CarryOn compatibility
+## Building from source
 
-When CarryOn is installed and the player is carrying a block in their hands, LockInteract yields entirely. CarryOn manages its own interact delay in that state.
+Copy `localSettings.props.template` to `localSettings.props` and set `GameDirectory` to your Vintage Story path.
+
+```
+dotnet build LockInteract_1.21.csproj -c Release
+```
+
+Output zip is written to `Releases/`.

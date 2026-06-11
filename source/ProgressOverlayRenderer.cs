@@ -5,17 +5,32 @@ using Vintagestory.API.MathTools;
 
 namespace LockInteract
 {
+    /// <summary>
+    /// Renders the hold progress overlay in the Ortho stage:
+    ///   - A circular progress ring centred on the crosshair.
+    ///   - A "Hold to open…" text label positioned below the ring.
+    ///
+    /// Both elements share the same alpha and fade in/out together.
+    ///
+    /// RenderOrder 0 ensures we run early in the Ortho stage while the
+    /// engine's GUI shader is still the active shader. The engine activates
+    /// the GUI shader before firing Ortho renderers and expects it to remain
+    /// active throughout; we must not call shader.Stop().
+    ///
+    /// Crosshair position: when the mouse is grabbed (in-world) we use the
+    /// screen centre. When the mouse is free (dialog open) we follow the cursor.
+    /// </summary>
     public class ProgressOverlayRenderer : IRenderer
     {
         // ── Visual constants ──────────────────────────────────────────────────
 
-        private const int   CircleColor    = 0xFFDD88;
-        private const float FadeInSpeed    = 0.12f;
-        private const float FadeOutSpeed   = 0.20f;
-        private const int   CircleMaxSteps = 16;
-        private const float OuterRadius    = 24f;
-        private const float InnerRadius    = 18f;
-        private const int   TextOffsetY    = 10;
+        private const int   CircleColor    = 0xFFDD88; // warm amber
+        private const float FadeInSpeed    = 0.12f;    // seconds to full opacity
+        private const float FadeOutSpeed   = 0.20f;    // seconds to transparent
+        private const int   CircleMaxSteps = 16;       // triangle strip segments
+        private const float OuterRadius    = 24f;      // pixels
+        private const float InnerRadius    = 18f;      // pixels (ring thickness)
+        private const int   TextOffsetY    = 10;       // pixels below ring bottom
 
         // ── State ─────────────────────────────────────────────────────────────
 
@@ -29,8 +44,6 @@ namespace LockInteract
         private float _progress = 0f;
         private bool  _visible  = false;
 
-        // ── RenderOrder 0 matches CarryOn — run early in the Ortho stage
-        // while the engine's default GUI shader is still active.
         public double RenderOrder => 0;
         public int    RenderRange => 10;
 
@@ -44,6 +57,8 @@ namespace LockInteract
 
         public void SetProgress(float progress)
         {
+            // Reject NaN/Infinity before clamping — GameMath.Clamp passes NaN through.
+            if (float.IsNaN(progress) || float.IsInfinity(progress)) progress = 0f;
             _progress = GameMath.Clamp(progress, 0f, 1f);
             _visible  = true;
         }
@@ -54,18 +69,24 @@ namespace LockInteract
 
         public void OnRenderFrame(float dt, EnumRenderStage stage)
         {
-            // Mirror CarryOn exactly: use whatever shader the engine has active.
             var rend   = _api.Render;
             var shader = rend.CurrentActiveShader;
 
-            _alpha = Math.Clamp(
-                _alpha + dt / (_visible ? FadeInSpeed : -FadeOutSpeed),
-                0f, 1f);
+            // Fade alpha in or out each frame. Guard against a bad dt so a single
+            // NaN frame can't permanently poison _alpha.
+            if (!float.IsNaN(dt) && !float.IsInfinity(dt))
+            {
+                _alpha = Math.Clamp(
+                    _alpha + dt / (_visible ? FadeInSpeed : -FadeOutSpeed),
+                    0f, 1f);
+            }
+            if (float.IsNaN(_alpha)) _alpha = 0f;
 
             if (_progress <= 0f || _alpha <= 0f) return;
 
             UpdateCircleMesh(_progress);
 
+            // Crosshair position in screen pixels
             int cx, cy;
             if (_api.Input.MouseGrabbed)
             {
@@ -78,7 +99,7 @@ namespace LockInteract
                 cy = _api.Input.MouseY;
             }
 
-            // ── Progress ring (mirrors CarryOn's HudOverlayRenderer exactly) ──
+            // ── Progress ring ─────────────────────────────────────────────────
             if (_config.ShowProgressOverlay && shader != null)
             {
                 float r = ((CircleColor >> 16) & 0xFF) / 255f;
@@ -102,11 +123,11 @@ namespace LockInteract
 
                 rend.RenderMesh(_mesh);
 
-                // Reset noTexture so subsequent renderers aren't affected
+                // Restore noTexture so subsequent renderers aren't affected
                 shader.Uniform("noTexture", 0f);
             }
 
-            // ── "Hold to open..." label below the crosshair ───────────────────
+            // ── "Hold to open…" label ─────────────────────────────────────────
             if (_config.ShowHoldHint)
             {
                 EnsureTextTexture();
@@ -136,6 +157,10 @@ namespace LockInteract
 
         // ── Mesh ──────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Builds a triangle-strip ring mesh covering [0, progress] of a full circle.
+        /// The mesh is in unit space; GlScale applies OuterRadius at render time.
+        /// </summary>
         private void UpdateCircleMesh(float progress)
         {
             const float ring = InnerRadius / OuterRadius;

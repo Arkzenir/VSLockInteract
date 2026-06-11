@@ -2,6 +2,8 @@
   "Enabled": true,
   "HoldTime": 0.8,
   "ApplyToPersonalLocks": false,
+  "UseManipulationSpeed": true,
+  "ManipulationSpeedWeight": 1.0,
   "BlockCodeAllowList": ["game:door-*"],
   "BlockCodeDenyList": [],
   "ShowProgressOverlay": true,
